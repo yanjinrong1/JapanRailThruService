@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(__dirname+'/../dist/app.js','utf8'),rails=JSON.parse(fs.readFileSync(__dirname+'/../dist/rail-data.json','utf8')),shink=rails.filter(r=>r.id.startsWith('Shinkansen.'));
+assert.deepEqual(shink.map(r=>r.stations.length),[17,19]);assert.equal(new Set(shink.flatMap(r=>r.stations.map(s=>s.name))).size,35);
+const raw=JSON.parse(fs.readFileSync(__dirname+'/../data/shinkansen-mlit-2024.json','utf8'));assert(raw.sections.every(s=>['東海道新幹線','山陽新幹線'].includes(s.line)));
+const c=vm.createContext({document:{querySelector(){return {}}},localStorage:{getItem:()=>null},console});vm.runInContext(source.slice(0,source.indexOf('let rails=')),c);
+const station=(r,n)=>r.stations.find(s=>s.name===n),kind=(r,n,t)=>c.stopKind(r,station(r,n),t);
+vm.runInContext("if(defs.shinkCentral.join(',')!=='nNozomi,nHikari,nKodama'||defs.shinkWest.join(',')!==defs.shinkCentral.join(','))throw Error('Unexpected Shinkansen service')",c);
+assert.equal(kind(shink[0],'名古屋','nNozomi'),2);assert.equal(kind(shink[0],'静岡','nNozomi'),0);assert.equal(kind(shink[0],'静岡','nHikari'),1);assert.equal(kind(shink[0],'新富士','nHikari'),0);assert.equal(kind(shink[1],'姫路','nNozomi'),1);assert.equal(kind(shink[1],'姫路','nHikari'),2);assert.equal(kind(shink[1],'西明石','nNozomi'),1);assert.equal(kind(shink[1],'厚狭','nNozomi'),0);
+for(const r of shink){assert(r.geometrySources.every(s=>s.line.endsWith('新幹線')));let previous=-1;for(const s of r.stations){assert.equal(c.stopKind(r,s,'nKodama'),2);let i=r.coords.findIndex(p=>p[0]===s.coord[0]&&p[1]===s.coord[1]);assert(i>=0&&i>previous,s.name);previous=i}assert.equal(new Set(r.coords.map(p=>JSON.stringify(p))).size,r.coords.length,'No track backtracking')}
+assert.deepEqual(shink[0].coords.at(-1),shink[1].coords[0]);assert(!c.available(rails.find(r=>r.id==='Keikyu.Main'),'nNozomi'));assert(!c.available(shink[0],'local'));
+const nodes=[];Object.assign(c,{railData:shink,nodes,root:{replaceChildren(){}},el:(tag,attrs)=>{const n={tag,attrs,addEventListener(){}};nodes.push(n);return n},point:p=>({x:p[0]*1000,y:-p[1]*1000}),map:{getZoom:()=>8,layerPointToContainerPoint:p=>p,getSize:()=>({x:100,y:100})},L:{point:(x,y)=>({x,y})}});
+vm.runInContext(source.slice(source.indexOf('function displayMetrics'),source.indexOf('function refresh()')),c);vm.runInContext("let rails=railData,active=new Set(['shinkCentral','shinkWest'].flatMap(g=>defs[g].map(t=>g+':'+t))),labelOn=false,dark=true;draw()",c);
+assert.equal(nodes.filter(n=>n.attrs['data-station']==='新大阪').length,1);assert(nodes.some(n=>n.attrs.class==='partial-stop'));assert.equal(nodes.filter(n=>n.attrs.class==='station-hit').length,35);
+console.log('PASS: 35 Shinkansen stations, 3 service types, operator/line-filtered geometry, no backtracking, fixed/conditional/pass rules, Kodama all stops, one Shin-Osaka marker and conditional-stop rendering.');

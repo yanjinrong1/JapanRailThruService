@@ -1,0 +1,10 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(__dirname+'/../dist/app.js','utf8');let added=[],removed=[],saved={},radio=['dark','positron','osm'].map(value=>({value})),status={};let support=true;
+const layer=options=>({options,addTo(){added.push(this);return this},getMaplibreMap(){return {on(){}}}});
+const c=vm.createContext({window:{maplibregl:true},maplibregl:{supported:()=>support},L:{maplibreGL:layer,tileLayer:(url,options)=>layer({url,...options})},map:{removeLayer:l=>removed.push(l)},document:{body:{classList:{toggle(){}}},querySelectorAll:()=>radio},localStorage:{setItem:(k,v)=>saved[k]=v},$:()=>status,draw(){},console});
+vm.runInContext(source.slice(source.indexOf('let tile,baseGeneration'),source.indexOf('\nL.svg')),c);
+c.basemap('dark');assert.equal(added.at(-1).options.style,'https://tiles.openfreemap.org/styles/dark');assert(radio[0].checked);
+c.basemap('positron');assert.equal(added.at(-1).options.style,'https://tiles.openfreemap.org/styles/positron');assert.equal(saved['rail-basemap'],'positron');assert.equal(removed.length,1);
+c.basemap('osm');assert(added.at(-1).options.url.includes('tile.openstreetmap.org'));support=false;c.basemap('dark');assert.equal(saved['rail-basemap'],'osm');assert(status.textContent.includes('不支持'));
+delete c.maplibregl.supported;c.basemap('dark');assert.equal(added.at(-1).options.style,'https://tiles.openfreemap.org/styles/dark');
+console.log('PASS: vector style selection, OSM switch, layer removal, persisted preference WebGL fallback and MapLibre without supported() export.');

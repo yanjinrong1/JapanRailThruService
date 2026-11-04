@@ -1,0 +1,16 @@
+{
+  "name": "japan-rail-through-service-map",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive Japan rail through-service map",
+  "scripts": {
+    "test": "node scripts/test.cjs",
+    "serve": "python3 -m http.server 8000 --directory dist"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
