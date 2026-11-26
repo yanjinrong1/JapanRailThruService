@@ -1,0 +1,20 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(__dirname+'/../dist/app.js','utf8'),rows=JSON.parse(fs.readFileSync(__dirname+'/../dist/rail-data.json','utf8')).filter(r=>r.id.startsWith('OdakyuSystem.'));
+const c=vm.createContext({document:{querySelector(){return {}}},localStorage:{getItem:()=>null}});vm.runInContext(fs.readFileSync(__dirname+'/../dist/odakyu.js','utf8'),c);vm.runInContext(source.slice(0,source.indexOf('let rails=')),c);
+const route=k=>rows.find(r=>r.id==='OdakyuSystem.'+k),kind=(k,name,t)=>{const r=route(k),s=r.stations.find(s=>s.name===name);assert(s,name);return c.stopKind(r,s,t)};
+assert.equal(rows.length,7);assert.equal(new Set(rows.flatMap(r=>r.stations.map(s=>s.name))).size,102);
+assert.equal(c.ODAKYU.groups.odOdakyu.services.length,6);for(const group of ['odMetro','odJR'])assert.equal(c.ODAKYU.groups[group].services.length,1);
+assert.equal(c.ODAKYU.types.find(t=>t[0]==='odExpress')[3],c.ODAKYU.types.find(t=>t[0]==='odCommuterExpress')[3]);assert.equal(c.ODAKYU.types.find(t=>t[0]==='odSemi')[3],c.ODAKYU.types.find(t=>t[0]==='odCommuterSemi')[3]);
+for(const k of ['Metro','KitaAyase','Joban'])for(const s of route(k).stations)assert.equal(kind(k,s.name,k==='Joban'?'odJRLocal':'odMetroLocal'),2);
+for(const k of ['Metro','KitaAyase','Joban'])assert(!c.available(route(k),'odExpress'));
+assert.equal(kind('Odawara','開成','odRapid'),2);assert.equal(kind('Odawara','足柄','odRapid'),0);assert.equal(kind('Odawara','足柄','odExpress'),2);
+assert.equal(kind('Odawara','喜多見','odSemi'),2);assert.equal(kind('Odawara','和泉多摩川','odSemi'),2);assert.equal(kind('Odawara','千歳船橋','odSemi'),2);assert.equal(kind('Odawara','千歳船橋','odCommuterSemi'),0);
+assert.equal(kind('Odawara','新宿','odSemi'),0);assert.equal(kind('Odawara','伊勢原','odSemi'),0);assert.equal(kind('Odawara','伊勢原','odCommuterSemi'),2);assert.equal(kind('Odawara','町田','odCommuterExpress'),0);assert.equal(kind('Odawara','登戸','odCommuterExpress'),0);assert.equal(kind('Odawara','向ヶ丘遊園','odCommuterExpress'),2);
+assert.equal(kind('Tama','五月台','odExpress'),2);assert.equal(kind('Tama','五月台','odRapid'),0);assert.equal(kind('Tama','栗平','odCommuterExpress'),2);assert(!c.available(route('Tama'),'odSemi'));
+assert.equal(kind('Enoshima','長後','odRapid'),0);assert.equal(kind('Enoshima','長後','odExpress'),2);assert(!c.available(route('EnoshimaSouth'),'odRapid'));assert.equal(kind('EnoshimaSouth','片瀬江ノ島','odExpress'),2);
+assert.equal(route('Enoshima').stations[0].name,'藤沢');assert.equal(route('EnoshimaSouth').stations.at(-1).name,'藤沢');assert.equal(route('Metro').stations[0].name,'代々木上原');assert.equal(route('Metro').stations.at(-1).name,'綾瀬');assert.equal(route('Joban').stations.at(-1).name,'取手');
+assert(!rows.some(r=>r.stations.some(s=>['箱根湯本','上野','日暮里','佐貫'].includes(s.name))));
+const distance=(a,b)=>Math.hypot((a[0]-b[0])*.81,a[1]-b[1])*111000,junctions=new Map();
+for(const r of rows){const expected=r.group==='odMetro'?'東京地下鉄':r.group==='odOdakyu'?'小田急電鉄':'東日本旅客鉄道';assert(r.geometrySources.every(s=>s.operator===expected));let prev=-1;for(const s of r.stations){const i=r.coords.reduce((best,p,i)=>distance(p,s.coord)<distance(r.coords[best],s.coord)?i:best,0);assert(distance(r.coords[i],s.coord)<.1,r.name+': '+s.name);assert(i>prev,r.name+': '+s.name);prev=i;if(s.junction){if(junctions.has(s.name))assert.deepEqual(s.coord,junctions.get(s.name));else junctions.set(s.name,s.coord)}}assert(r.coords.every((p,i)=>!i||distance(p,r.coords[i-1])<1500),r.name+' unexpected jump')}
+vm.runInContext(fs.readFileSync(__dirname+'/../dist/rail-viewport.js','utf8'),c);const trimmed=c.RailViewport.trim([{x:0,y:0,order:0},{x:10,y:0,order:10},{x:20,y:0,order:20}],[{x:0,y:1},{x:0,y:1},{x:0,y:1}],16,4);assert.equal(trimmed[0].p.x,4);assert.equal(trimmed.at(-1).p.x,16);assert(trimmed.every(n=>n.p.order>=4&&n.p.order<=16));
+console.log('PASS: 102 stations, own-operator continuous rail graphs, Fujisawa reversal, merged six services, accurate service extents/commuter stops, updated Kaisei/semi stops and exact two-end trimming.');

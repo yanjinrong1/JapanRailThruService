@@ -1,6 +1,5 @@
-import os
 import json,pathlib
-src=pathlib.Path(os.environ.get('MINI_TOKYO_DATA_DIR', str(pathlib.Path(__file__).resolve().parent.parent/'mini-tokyo'/'data'))); out=pathlib.Path(__file__).parent/'dist'
+src=pathlib.Path('/workspace/mini-tokyo/data'); out=pathlib.Path(__file__).parent/'dist'
 raw=json.load(open(src/'coordinates.json')); rails=json.load(open(src/'railways.json')); stations={s['id']:s for s in json.load(open(src/'stations.json'))}
 ids=['Keikyu.Main','Keikyu.Airport','Keikyu.Zushi','Keikyu.Kurihama','Toei.Asakusa','Keisei.Oshiage','Keisei.Main','Keisei.NaritaSkyAccess','Hokuso.Hokuso','Keisei.HigashiNarita','Shibayama.Shibayama']
 cs={r['id']:[p[:2] for sub in r['sublines'] if sub.get('opacity',1)!=0 for p in sub.get('coords',[])] for r in raw['railways']}
@@ -47,3 +46,17 @@ subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_chuo.py')]
 subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_shinkansen.py')],check=True)
 subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_fukutoshin.py')],check=True)
 subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'build_fukutoshin_config.py')],check=True)
+
+# Add the Namboku/Mita corridor after Fukutoshin shared geometry exists.
+import runpy
+runpy.run_path(str(pathlib.Path(__file__).parent/"add_namboku.py"))
+runpy.run_path(str(pathlib.Path(__file__).parent/"build_namboku_config.py"))
+
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_hanzomon.py')],check=True)
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'build_hanzomon_config.py')],check=True)
+
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_odakyu.py')],check=True)
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'build_odakyu_config.py')],check=True)
+
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'add_shinjuku.py')],check=True)
+subprocess.run([sys.executable,str(pathlib.Path(__file__).parent/'build_shinjuku_config.py')],check=True)

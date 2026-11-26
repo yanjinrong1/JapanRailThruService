@@ -1,7 +1,6 @@
-import os
 import json,pathlib,math,heapq
 root=pathlib.Path(__file__).parent
-src=pathlib.Path(os.environ.get('MINI_TOKYO_DATA_DIR', str(pathlib.Path(__file__).resolve().parent.parent/'mini-tokyo'/'data')));rr={r['id']:r for r in json.load(open(src/'railways.json'))};st={s['id']:s for s in json.load(open(src/'stations.json'))}
+src=pathlib.Path('/workspace/mini-tokyo/data');rr={r['id']:r for r in json.load(open(src/'railways.json'))};st={s['id']:s for s in json.load(open(src/'stations.json'))}
 sections=json.load(open(root/'data/chuo-ome-mlit-2024.json'))
 def dist(a,b):return math.hypot((a[0]-b[0])*.81,a[1]-b[1])*111000
 def build_graph(line):

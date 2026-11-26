@@ -49,3 +49,19 @@ Tests: `rail-lines.cjs` checks physical-line identity, theme metadata, source ge
 
 ## Menu expansion versus selection (current interaction)
 Top-level folder expansion is presentation-only: opening/closing a folder never changes checkboxes, active map layers or data loading. Checkboxes alone load/show or hide/release a system, and do not force folders open/closed. Explicit focus/search actions still activate their target system. This supersedes the earlier collapse-to-release interaction described above. The switch thumb uses a CSS pseudo-element centered at 50% height, isolated from generic header span styling.
+
+ 
+## v29 published progress
+
+Sites version 29 is deployed at https://japan-rail-through-services.yanjinrong1.chatgpt.site.
+The synchronized source is Sites commit 3af83da9fef0434b7a17f8a47bede16e5dd762a5.
+
+The map now includes the Namboku/Mita, Hanzomon/Hibiya, Odakyu/Chiyoda/Joban-local and Shinjuku/Keio systems. Global line width controls and compact line symbols are available.
+
+The Fukutoshin/Yurakucho system follows the ObsidianVault note and reference diagrams. Yurakucho extends to Shin-kiba. Weekday S-TRAIN runs Tokorozawa–Toyosu, while holiday S-TRAIN connects Seibu-Chichibu with Minatomirai. The Chichibu extension has only S-TRAIN. Ikebukuro F09 and Y09 have separate markers, search results and station cards. The Yurakucho menu uses a gold Y line symbol.
+
+The right toolbar station-name toggle works in both detailed and simplified modes and retains its state when switching modes. The header displays v29. Increment the visible version on every subsequent published update to match the Sites version.
+
+Validation used the existing regression suite for map geometry, service stops, lazy loading, search, line symbols and display controls. Latest label-toggle changes passed the simplified-mode and application lifecycle checks.
+
+For future edits, retrieve the latest source from Sites before editing. GitHub is a synchronized copy of the published source.

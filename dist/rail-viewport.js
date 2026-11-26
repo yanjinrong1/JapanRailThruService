@@ -14,5 +14,8 @@ globalThis.RailViewport={
    if(high<1)flush();
   }flush();return chunks;
  },
- trim(points,normals,end=Infinity){const result=[];for(let i=0;i<points.length;i++){const p=points[i],n=normals[i];if(p.order<=end){result.push({p,n});continue}if(i>0&&points[i-1].order<end){const a=points[i-1],na=normals[i-1],t=(end-a.order)/(p.order-a.order);result.push({p:{x:a.x+t*(p.x-a.x),y:a.y+t*(p.y-a.y)},n:{x:na.x+t*(n.x-na.x),y:na.y+t*(n.y-na.y)}})}break}return result}
+ trim(points,normals,end=Infinity,start=-Infinity){const result=[];
+  for(let i=0;i<points.length-1;i++){const a=points[i],b=points[i+1],na=normals[i],nb=normals[i+1],span=b.order-a.order;if(span<=0)continue;const low=Math.max(0,(start-a.order)/span),high=Math.min(1,(end-a.order)/span);if(low>high)continue;
+   for(const t of [low,high]){const p={x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y),order:a.order+t*span},n={x:na.x+t*(nb.x-na.x),y:na.y+t*(nb.y-na.y)};if(!result.length||Math.hypot(result.at(-1).p.x-p.x,result.at(-1).p.y-p.y)>1e-6)result.push({p,n})}
+  }return result}
 };

@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(__dirname+'/../dist/app.js','utf8');
 const helpers=source.slice(source.indexOf('function displayMetrics'),source.indexOf('function draw()'));
-const context=vm.createContext({});vm.runInContext(helpers,context);
+const context=vm.createContext({lineStyle:'thick'});vm.runInContext(helpers,context);
 const rails=JSON.parse(fs.readFileSync(__dirname+'/../dist/rail-data.json','utf8'));
 function project(c,z){const sin=Math.sin(c[1]*Math.PI/180),size=256*2**z;return{x:(c[0]+180)/360*size,y:(.5-Math.log((1+sin)/(1-sin))/(4*Math.PI))*size}}
 let previous=0;

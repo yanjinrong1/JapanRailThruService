@@ -1,19 +1,18 @@
-import os
 """Operator-filtered rail graphs for the Fukutoshin through-service corridors."""
-import json,pathlib,math,heapq,re
+import json,pathlib,math,heapq,sys
 root=pathlib.Path(__file__).parent
-src=pathlib.Path(os.environ.get('MINI_TOKYO_DATA_DIR', str(pathlib.Path(__file__).resolve().parent.parent/'mini-tokyo'/'data')));rr={r['id']:r for r in json.load(open(src/'railways.json'))};mini={s['id']:s for s in json.load(open(src/'stations.json'))}
-def names(rid):return [mini[s]['title']['ja'].split('〈')[0] for s in rr[rid]['stations']]
-metro=names('TokyoMetro.Fukutoshin');tobu=names('Tobu.Tojo');seibu=names('Seibu.Ikebukuro');chichibu=names('Seibu.SeibuChichibu');main=names('Sotetsu.Main')
+src=pathlib.Path(sys.argv[1] if len(sys.argv)>1 else '/workspace/mini-tokyo/data');rr={r['id']:r for r in json.load(open(src/'railways.json'))};mini={s['id']:s for s in json.load(open(src/'stations.json'))}
+def names(rid):return [mini[s]['title']['ja'].split('〈')[0].replace('麴','麹') for s in rr[rid]['stations']]
+metro=names('TokyoMetro.Fukutoshin');tobu=names('Tobu.Tojo');seibu=names('Seibu.Ikebukuro');main=names('Sotetsu.Main');chichibu=names('Seibu.SeibuChichibu')
 I=lambda a,name:a.index(name)
 specs=[
- ('MetroNorth','副都心线（和光市—小竹向原）','fMetro',[('東京地下鉄','8号線有楽町線')],metro[:6]),
+ ('MetroNorth','副都心线／有乐町线（和光市—小竹向原）','fMetro',[('東京地下鉄','8号線有楽町線')],metro[:6]),
  ('MetroCore','副都心线（小竹向原—涩谷）','fMetro',[('東京地下鉄','13号線副都心線')],metro[5:]),
+ ('Yurakucho','有乐町线（小竹向原—新木场）','fMetro',[('東京地下鉄','8号線有楽町線')],names('TokyoMetro.Yurakucho')[5:]),
  ('Tobu','东武东上线（和光市—小川町）','fTobu',[('東武鉄道','東上本線')],tobu[I(tobu,'和光市'):I(tobu,'小川町')+1]),
  ('SeibuLink','西武有乐町线（直通连接段）','fSeibu',[('西武鉄道','西武有楽町線')],names('Seibu.SeibuYurakucho')),
  ('SeibuMain','西武池袋线（练马—饭能）','fSeibu',[('西武鉄道','池袋線')],seibu[I(seibu,'練馬'):I(seibu,'飯能')+1]),
  ('SeibuChichibu','饭能—西武秩父（S-TRAIN 支线）','fSeibu',[('西武鉄道','池袋線'),('西武鉄道','西武秩父線')],seibu[I(seibu,'飯能'):]+chichibu[2:I(chichibu,'西武秩父')+1]),
- ('SeibuSayama','西武狭山线（活动直通支线）','fSeibu',[('西武鉄道','狭山線')],names('Seibu.Sayama')),
  ('Toyoko','东急东横线','fTokyu',[('東急電鉄','東横線')],names('Tokyu.Toyoko')),
  ('TokyuShinYokohama','东急新横滨线','fTokyu',[('東急電鉄','東急新横浜線')],names('Tokyu.TokyuShinYokohama')),
  ('SotetsuShinYokohama','相铁新横滨线','fSotetsu',[('相模鉄道','相鉄新横浜線')],names('Sotetsu.SotetsuShinYokohama')),
@@ -22,11 +21,11 @@ specs=[
  ('Minatomirai','港未来线','fMinato',[('横浜高速鉄道','みなとみらい21線')],names('Minatomirai.Minatomirai'))]
 path=root/'data/fukutoshin-mlit-2024.json'
 if not path.exists():
- allowed=set(pair for spec in specs for pair in spec[3]);sections=[s for s in json.load(open(pathlib.Path(os.environ.get('MLIT_DATA_DIR', str(root.parent/'mlit-json'/'data')))/'sections.json')) if (s['operator'],s['line']) in allowed];stations=[s for s in json.load(open(pathlib.Path(os.environ.get('MLIT_DATA_DIR', str(root.parent/'mlit-json'/'data')))/'stations.json')) if (s['operator'],s['line']) in allowed]
+ allowed=set(pair for spec in specs for pair in spec[3]);sections=[s for s in json.load(open('/workspace/mlit-json/data/sections.json')) if (s['operator'],s['line']) in allowed];stations=[s for s in json.load(open('/workspace/mlit-json/data/stations.json')) if (s['operator'],s['line']) in allowed]
  json.dump({'sections':sections,'stations':stations},open(path,'w'),ensure_ascii=False,separators=(',',':'))
 data=json.load(open(path))
 def dist(a,b):return math.hypot((a[0]-b[0])*.81,a[1]-b[1])*111000
-def normalize(name):return name.split('〈')[0].split('<')[0].replace('ケ','ヶ').replace('・','').replace(' ', '')
+def normalize(name):return name.split('〈')[0].split('<')[0].replace('麴','麹').replace('ケ','ヶ').replace('・','').replace(' ', '')
 def graph_for(pairs):
  g={}
  for s in data['sections']:
@@ -69,6 +68,10 @@ for key,title,group,pairs,station_names in specs:
   # MLIT station midpoints keep snapping on the operator's own platforms.
   official=candidates[0];coord=snap(g,(official['lng'],official['lat']));nodes.append(coord)
   en=next((s['title']['en'] for s in mini.values() if normalize(s['title']['ja'])==normalize(name)),name)
+  if name=='池袋' and key in {'MetroCore','Yurakucho'}:
+   code='F09' if key=='MetroCore' else 'Y09'
+   name=f'{name} {code}'
+   en=f'{en} {code}'
   ss.append({'id':'Fukutoshin.Station.'+normalize(name),'name':name,'en':en,'coord':list(coord)})
  # First trace the continuous running line. Station markers are projected onto
  # that path, so a nearby siding/platform stub cannot force a train to reverse.
@@ -100,8 +103,11 @@ for station_id,entries in shared.items():
  canonical=entries[0][1]['coord'][:]
  for r,s in entries:
   old=s['coord'][:];index=min(range(len(r['coords'])),key=lambda i:dist(r['coords'][i],old))
+  # East of Kotake the two Metro lines have separate platforms and tracks.
+  s['junction']=True
+  if s['name'] in {'千川','要町'}:continue
   assert dist(old,canonical)<180,(s['name'],dist(old,canonical))
-  r['coords'][index]=canonical[:];s['coord']=canonical[:];s['junction']=True
+  r['coords'][index]=canonical[:];s['coord']=canonical[:]
 rs=json.load(open(root/'dist/rail-data.json'));rs=[r for r in rs if not r['id'].startswith('Fukutoshin.')]+result
 json.dump(rs,open(root/'dist/rail-data.json','w'),ensure_ascii=False,separators=(',',':'))
 print('Unique Fukutoshin-corridor stations:',len(shared))
