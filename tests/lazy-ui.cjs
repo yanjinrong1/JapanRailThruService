@@ -27,6 +27,6 @@ const details=[...document.querySelectorAll('#tree>details')],selectSystem=(node
  await results.find(b=>b.textContent.includes('池袋 Y09')).onclick();flush();
  assert(document.querySelector('#detail h2').textContent.includes('池袋 Y09'));
  assert(!document.querySelector('#detail').textContent.includes('池袋 F09'));
- assert.equal(document.querySelector('.beta').textContent,'v30');
+ assert.equal(document.querySelector('.beta').textContent,'v31');
  console.log('PASS: complete app boots with zero rail requests; open loads only one system; close removes geometry/SVG while preserving service selection; rapid close ignores stale response; search loads only its selected system.');
 })().catch(e=>{console.error(e);process.exitCode=1});

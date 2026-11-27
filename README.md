@@ -95,13 +95,13 @@ Top-level folder expansion is presentation-only: opening/closing a folder never 
 
 新增N02地铁2号线轨迹，北千住统一接点；东武各停使用双端范围裁剪，不画到押上支线、久喜或南栗桥。半藏门与日比谷各自一个二级菜单，均仅一项各停；H线路符号加入两级菜单并保持去重。旧的半藏门急行／准急偏好移除。按需加载、精简模式与全局粗细保留。
 
-Published UI version is v30. Increment the header version on every subsequent published update to match the Sites version number.
+Published UI version is v31. Increment the header version on every subsequent published update to match the Sites version number.
 
 
 ## Cloudflare Pages
 
 Connect this GitHub repository in Cloudflare Workers & Pages using a Pages project.
-Choose production branch `main`, framework preset `None`, leave the build command empty, and set the build output directory to `dist`. Use the repository root as the root directory. The committed static files are ready to publish.
+Choose production branch `main`, framework preset `None`, set the build command to `npm run build`, and set the build output directory to `dist`. Use the repository root as the root directory. The committed static files are ready to publish.
 
 `wrangler.jsonc` declares the Pages output directory for Wrangler deployments. For a direct upload after authenticating with Cloudflare, run `npx wrangler pages deploy dist --project-name japan-rail-through-services`. Use your actual Pages project name if different.
 
